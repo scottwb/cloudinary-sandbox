@@ -5,28 +5,37 @@ if File.exist?('.env')
   File.read('.env').lines.each do |line|
     next if line =~ /^\s*\#/
     key, val = line.strip.split('=')
-    key.strip!
-    val.strip!
-    if val =~ /\$(.+)/
-      val = ENV[$1]
+    if key && val
+      key.strip!
+      val.strip!
+      if val =~ /\$(.+)/
+        val = ENV[$1]
+      end
+      ENV[key]=val
     end
-    ENV[key]=val
   end
 end
 require 'cloudinary'
 require 'securerandom'
 
-image_file = ARGV[0]
-public_id  = SecureRandom.hex
+def upload_file(image_file)
+  public_id  = File.basename(image_file).split('.').first
 
-if image_file.nil?
-  raise "No image file provided on command line"
+  puts "Uploading #{image_file} as #{public_id}"
+  Cloudinary::Uploader.upload(
+    image_file,
+    :public_id => public_id,
+  )
+
+  url = Cloudinary::Utils.cloudinary_url("#{public_id}.png")
+  puts "  #{url}"
 end
 
-puts "Uploading #{image_file} as #{public_id}"
-Cloudinary::Uploader.upload(
-  image_file,
-  :public_id => public_id,
-  :type => :private
-)
+dir = ARGV[0]
+if dir.nil?
+  raise "No directory provided on command line"
+end
 
+Dir.chdir(dir) do
+  Dir.glob("*.png").each { |e| upload_file(e) }
+end
