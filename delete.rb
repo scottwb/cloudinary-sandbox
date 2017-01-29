@@ -18,4 +18,4 @@ end
 require 'cloudinary'
 require 'securerandom'
 
-Cloudinary::Api.delete_all_resources
+Cloudinary::Api.delete_all_resources(:type => :upload)
